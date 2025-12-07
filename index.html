@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  <meta charset="UTF-8" />
+  <title>Capture the Flag</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- START SCREEN -->
+    <section id="screen-start" class="screen screen--active screen--blue-bg">
+      <header class="top-bar">
+        <button class="icon-button" aria-label="Help">?</button>
+      </header>
+
+      <div class="screen-content">
+        <div class="logo">LOGO</div>
+
+        <label class="field">
+          <span class="field-label">Game length</span>
+          <div class="select-wrapper">
+            <select id="gameLength">
+              <option value="" selected disabled>Pick game length</option>
+              <option value="3">3 minutes</option>
+              <option value="5">5 minutes</option>
+              <option value="10">10 minutes</option>
+              <option value="15">15 minutes</option>
+            </select>
+          </div>
+        </label>
+      </div>
+
+      <div class="bottom-bar">
+        <button id="startButton" class="primary-button">START</button>
+      </div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="screen-game" class="screen screen--blue-bg">
+      <header class="top-bar top-bar--game">
+        <div class="pill" id="timerDisplay">05:00</div>
+        <div class="pill pill--icon">
+          <span id="flagCount">0</span>
+          <span>🚩</span>
+        </div>
+      </header>
+
+<div class="camera-area">
+  <div id="qr-reader" class="camera-placeholder">
+    Allow camera access to scan flags
+  </div>
+</div>
+
+      <div class="bottom-bar bottom-bar--game">
+        <button class="camera-button" aria-label="Scan">
+          📷
+        </button>
+      </div>
+    </section>
+
+    <!-- FINAL SCREEN (BLUE VERSION) -->
+    <section id="screen-results-blue" class="screen screen--blue-bg">
+      <div class="screen-content screen-content--centered">
+        <div class="logo">LOGO</div>
+        <div class="timer-final">00:00</div>
+        <h1 class="title-final">TIME’S UP</h1>
+
+        <div class="card">
+          <div class="card-main">
+            <span id="finalFlagsBlue" class="card-number">0</span>
+            <span class="card-icon">🚩</span>
+          </div>
+          <div class="card-caption">collected flags</div>
+        </div>
+
+        <button id="playAgainBlue" class="primary-button primary-button--wide">
+          play again
+        </button>
+      </div>
+    </section>
+
+    <!-- OPTIONAL: WHITE FINISH SCREEN (for later) -->
+    <section id="screen-results-white" class="screen screen--light-bg">
+      <div class="screen-content screen-content--centered">
+        <div class="logo logo--dark">LOGO</div>
+        <div class="timer-final timer-final--dark">00:00</div>
+        <h1 class="title-final title-final--dark">TIME’S UP</h1>
+
+        <div class="card card--dark">
+          <div class="card-main">
+            <span id="finalFlagsWhite" class="card-number">0</span>
+            <span class="card-icon">🚩</span>
+          </div>
+          <div class="card-caption">collected flags</div>
+        </div>
+
+        <div class="meta">
+          <div id="summaryGameLength">game length: 5 minutes</div>
+          <div id="summaryPlayers">players: 3</div>
+        </div>
+
+        <button id="playAgainWhite" class="primary-button primary-button--wide">
+          play again
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- QR code library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <!-- Your game logic -->
+  <script src="app.js"></script>
+</body>
+</html>

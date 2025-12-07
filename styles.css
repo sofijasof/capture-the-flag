@@ -1,0 +1,312 @@
+:root {
+  --blue-dark: #05071f;
+  --blue-mid: #272f6b;
+  --blue-bright: #4c63ff;
+  --purple-light: #7f82b0;
+  --white: #ffffff;
+  --gray-text: #7a7a8c;
+  --radius-large: 18px;
+  --radius-pill: 999px;
+  --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.3);
+  --app-max-width: 430px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    sans-serif;
+  color: var(--white);
+  background: #000;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.app {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-max-width);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Screens */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  padding: 24px 20px 32px;
+  display: none;
+}
+
+.screen--active {
+  display: flex;
+  flex-direction: column;
+}
+
+.screen--blue-bg {
+  background: linear-gradient(180deg, #3a446f 0%, #05071f 60%, #05071f 100%);
+}
+
+.screen--light-bg {
+  background: #fdfdff;
+  color: #111321;
+}
+
+/* Top bar */
+
+.top-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 40px;
+}
+
+.top-bar--game {
+  justify-content: space-between;
+}
+
+/* Content */
+
+.screen-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 32px;
+}
+
+.screen-content--centered {
+  justify-content: center;
+  align-items: stretch;
+}
+
+/* Bottom bar */
+
+.bottom-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.bottom-bar--game {
+  justify-content: center;
+  padding-bottom: 10px;
+}
+
+/* Common UI pieces */
+
+.logo {
+  font-size: 40px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.18em;
+}
+
+.logo--dark {
+  color: #111321;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.75;
+}
+
+.select-wrapper {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-pill);
+  padding: 0 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+select {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--white);
+  font-size: 16px;
+  padding: 12px 0;
+  appearance: none;
+}
+
+/* Little arrow illusion (optional) */
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper::after {
+  content: "▾";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.primary-button {
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--blue-bright);
+  color: var(--white);
+  box-shadow: var(--shadow-soft);
+}
+
+.primary-button--wide {
+  width: 100%;
+}
+
+.icon-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Game screen stuff */
+
+.camera-area {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+.camera-placeholder {
+  width: 100%;
+  border-radius: 8px;
+  background: #e4e6ed;
+  color: #111321;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.camera-button {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  border: none;
+  background: var(--white);
+  font-size: 30px;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Pills */
+
+.pill {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.85);
+  color: #111321;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill--icon {
+  padding-right: 12px;
+}
+
+/* Final screen cards / text */
+
+.timer-final {
+  margin-top: 24px;
+  font-size: 18px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.timer-final--dark {
+  color: #111321;
+}
+
+.title-final {
+  margin-top: 8px;
+  font-size: 24px;
+  text-align: center;
+  letter-spacing: 0.12em;
+}
+
+.title-final--dark {
+  color: #111321;
+}
+
+.card {
+  margin: 32px auto 24px;
+  padding: 16px 20px;
+  border-radius: var(--radius-large);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.card--dark {
+  background: #111321;
+  color: #ffffff;
+}
+
+.card-main {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.card-number {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.card-caption {
+  font-size: 13px;
+  text-align: center;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+.meta {
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray-text);
+  margin-bottom: 24px;
+}
+
+/* Utility */
+
+.hidden {
+  display: none !important;
+}
+
