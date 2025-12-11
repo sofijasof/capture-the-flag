@@ -1,7 +1,8 @@
 // ---------- GAME STATE ----------
 
-// Each team has its own set of flags.
-// Use these texts when you generate your QR codes.
+// Each QR code "belongs" to a team based on its ID.
+// You do NOT need to change existing QR codes as long as their text
+// matches these IDs (A_FLAG_01, B_FLAG_01, etc.)
 const TEAM_FLAGS = {
   A: {
     A_FLAG_01: "Flag 1 (Team A)",
@@ -19,6 +20,11 @@ const TEAM_FLAGS = {
   },
 };
 
+// ALL flags, regardless of who owns them
+const ALL_FLAGS = {
+  ...TEAM_FLAGS.A,
+  ...TEAM_FLAGS.B,
+};
 
 let timerInterval = null;
 let timeLeftSec = 0;
@@ -26,7 +32,6 @@ let collectedFlagIds = new Set();
 
 // Team / active flags
 let currentTeam = null;
-let activeFlags = {};
 
 // QR scanner
 let html5QrCode = null;
@@ -139,36 +144,22 @@ function onScanFailure(error) {
 
 // ---------- GAME LOGIC ----------
 
-function handleFlagScanned(flagId) {
-  if (!currentTeam || !activeFlags) {
-    console.log("Scan ignored: game not started yet.");
-    return;
-  }
-
-  // QR not part of current team's flags
-  if (!activeFlags[flagId]) {
-    console.log("QR code belongs to other team or unknown:", flagId);
-    flashFlagMessage("This flag belongs to the other team");
-    return;
-  }
-
-  if (collectedFlagIds.has(flagId)) {
-    console.log("Flag already collected:", flagId);
-    flashFlagMessage("You already collected this flag");
-    return;
-  }
-
-  collectedFlagIds.add(flagId);
-  updateFlagsUI();
-
-  flashFlagMessage(activeFlags[flagId]);
+// Which team owns this flag, based on its prefix?
+function getOwnerTeam(flagId) {
+  if (flagId.startsWith("A_")) return "A";
+  if (flagId.startsWith("B_")) return "B";
+  return null;
 }
 
-function flashFlagMessage(text) {
+// options: { bottom: number, duration: number }
+function flashFlagMessage(text, options = {}) {
+  const bottom = options.bottom ?? 120;      // px from bottom
+  const duration = options.duration ?? 1500; // ms
+
   const div = document.createElement("div");
   div.textContent = text;
   div.style.position = "absolute";
-  div.style.bottom = "120px";
+  div.style.bottom = `${bottom}px`;
   div.style.left = "50%";
   div.style.transform = "translateX(-50%)";
   div.style.padding = "10px 18px";
@@ -180,14 +171,65 @@ function flashFlagMessage(text) {
 
   document.querySelector(".app").appendChild(div);
 
-  setTimeout(() => div.remove(), 1500);
+  setTimeout(() => div.remove(), duration);
+}
+
+function handleFlagScanned(flagId) {
+  if (!currentTeam) {
+    console.log("Scan ignored: game not started yet.");
+    return;
+  }
+
+  const flagLabel = ALL_FLAGS[flagId];
+
+  // QR code not known at all
+  if (!flagLabel) {
+    console.log("Unknown QR code:", flagId);
+    flashFlagMessage("Unknown flag");
+    return;
+  }
+
+  const ownerTeam = getOwnerTeam(flagId);
+
+  // ❌ You are scanning your OWN team's flag: show warning, no points
+  if (ownerTeam === currentTeam) {
+    flashFlagMessage(
+      "This is your own team's flag – you have to steal the other team's flags!",
+      { bottom: 140, duration: 2200 }
+    );
+    return;
+  }
+
+  const alreadyCollected = collectedFlagIds.has(flagId);
+
+  // First time: add to set + increase score
+  if (!alreadyCollected) {
+    collectedFlagIds.add(flagId);
+    updateFlagsUI();
+
+    // main message: stolen flag
+    let msg;
+    if (ownerTeam) {
+      msg = `You stole Team ${ownerTeam}'s flag!`;
+    } else {
+      msg = "Flag captured!";
+    }
+
+    // show main "stolen" message higher + a bit longer
+    flashFlagMessage(msg, { bottom: 140, duration: 2000 });
+  } else {
+    // Re-scan: ONLY show "already scanned", lower + shorter
+    flashFlagMessage("You scanned this flag already", {
+      bottom: 80,
+      duration: 1200,
+    });
+  }
 }
 
 // ---------- START / END / RESET ----------
 
 function startGame(minutes, team) {
   currentTeam = team;
-  activeFlags = TEAM_FLAGS[team] || {};
 
   // team badge
   const teamBadge = document.getElementById("teamBadge");
@@ -237,7 +279,6 @@ function resetGame() {
   gameLengthSelect.selectedIndex = 0;
   teamSelect.selectedIndex = 0;
   currentTeam = null;
-  activeFlags = {};
 }
 
 // ---------- EVENT LISTENERS ----------
