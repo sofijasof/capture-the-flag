@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  
   <meta charset="UTF-8" />
   <title>Capture the Flag</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -16,12 +13,13 @@
     <!-- START SCREEN -->
     <section id="screen-start" class="screen screen--active screen--blue-bg">
       <header class="top-bar">
-        <button class="icon-button" aria-label="Help">?</button>
+        <button id="helpButton" class="icon-button" aria-label="How the game works">?</button>
       </header>
 
       <div class="screen-content">
         <div class="logo">LOGO</div>
 
+        <!-- Game length select -->
         <label class="field">
           <span class="field-label">Game length</span>
           <div class="select-wrapper">
@@ -31,6 +29,18 @@
               <option value="5">5 minutes</option>
               <option value="10">10 minutes</option>
               <option value="15">15 minutes</option>
+            </select>
+          </div>
+        </label>
+
+        <!-- Team select -->
+        <label class="field">
+          <span class="field-label">Team</span>
+          <div class="select-wrapper">
+            <select id="teamSelect">
+              <option value="" selected disabled>Pick your team</option>
+              <option value="A">Team A</option>
+              <option value="B">Team B</option>
             </select>
           </div>
         </label>
@@ -44,23 +54,20 @@
     <!-- GAME SCREEN -->
     <section id="screen-game" class="screen screen--blue-bg">
       <header class="top-bar top-bar--game">
+        <div class="team-badge" id="teamBadge">TEAM</div>
+
         <div class="pill" id="timerDisplay">05:00</div>
+
         <div class="pill pill--icon">
           <span id="flagCount">0</span>
           <span>🚩</span>
         </div>
       </header>
 
-<div class="camera-area">
-  <div id="qr-reader" class="camera-placeholder">
-    Allow camera access to scan flags
-  </div>
-</div>
-
-      <div class="bottom-bar bottom-bar--game">
-        <button class="camera-button" aria-label="Scan">
-          📷
-        </button>
+      <div class="camera-area">
+        <div id="qr-reader" class="camera-placeholder">
+          Allow camera access to scan flags
+        </div>
       </div>
     </section>
 
@@ -85,10 +92,11 @@
       </div>
     </section>
 
-    <!-- OPTIONAL: WHITE FINISH SCREEN (for later) -->
+    <!-- OPTIONAL WHITE FINISH SCREEN -->
     <section id="screen-results-white" class="screen screen--light-bg">
       <div class="screen-content screen-content--centered">
         <div class="logo logo--dark">LOGO</div>
+
         <div class="timer-final timer-final--dark">00:00</div>
         <h1 class="title-final title-final--dark">TIME’S UP</h1>
 
@@ -111,12 +119,28 @@
       </div>
     </section>
 
+    <!-- HELP OVERLAY -->
+    <div id="helpOverlay" class="help-overlay hidden">
+      <div class="help-backdrop"></div>
+      <div class="help-card">
+        <button id="helpClose" class="help-close" aria-label="Close help">×</button>
+
+        <h2>🕹️ How the Game Works</h2>
+        <ol class="help-list">
+          <li>You have to allow camera access to play the game.</li>
+          <li>Walk around campus and scan hidden QR codes. A QR code can only be scanned once by the same player.</li>
+          <li>Each QR code counts as a flag.</li>
+          <li>When the timer runs out, the team with the most flags wins.</li>
+        </ol>
+      </div>
+    </div>
+
   </div>
 
   <!-- QR code library -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-  <!-- Your game logic -->
+  <!-- App logic -->
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,17 +1,32 @@
 // ---------- GAME STATE ----------
 
-// Known flags in your building (you can add more)
-const FLAGS = {
-  LIBRARY_01: "Library entrance",
-  LIBRARY_02: "Silent study room",
-  CAFETERIA_01: "Cafeteria",
-  STAIRS_01: "Main stairwell",
+// Each team has its own set of flags.
+// Use these texts when you generate your QR codes.
+const TEAM_FLAGS = {
+  A: {
+    A_FLAG_01: "Flag 1 (Team A)",
+    A_FLAG_02: "Flag 2 (Team A)",
+    A_FLAG_03: "Flag 3 (Team A)",
+    A_FLAG_04: "Flag 4 (Team A)",
+    A_FLAG_05: "Flag 5 (Team A)",
+  },
+  B: {
+    B_FLAG_01: "Flag 1 (Team B)",
+    B_FLAG_02: "Flag 2 (Team B)",
+    B_FLAG_03: "Flag 3 (Team B)",
+    B_FLAG_04: "Flag 4 (Team B)",
+    B_FLAG_05: "Flag 5 (Team B)",
+  },
 };
 
-// Timing + score
+
 let timerInterval = null;
 let timeLeftSec = 0;
-let collectedFlagIds = new Set(); // we use a Set to avoid duplicates
+let collectedFlagIds = new Set();
+
+// Team / active flags
+let currentTeam = null;
+let activeFlags = {};
 
 // QR scanner
 let html5QrCode = null;
@@ -33,11 +48,14 @@ const finalFlagsWhite = document.getElementById("finalFlagsWhite");
 
 const startButton = document.getElementById("startButton");
 const gameLengthSelect = document.getElementById("gameLength");
+const teamSelect = document.getElementById("teamSelect");
 
 const playAgainBlue = document.getElementById("playAgainBlue");
 const playAgainWhite = document.getElementById("playAgainWhite");
 
-const cameraButton = document.querySelector(".camera-button"); // optional extra action
+const helpButton = document.getElementById("helpButton");
+const helpOverlay = document.getElementById("helpOverlay");
+const helpClose = document.getElementById("helpClose");
 
 // ---------- SCREEN MANAGEMENT ----------
 
@@ -68,13 +86,11 @@ function updateFlagsUI() {
 // ---------- QR SCANNER SETUP ----------
 
 function initScanner() {
-  if (html5QrCode) return; // already created
-
+  if (html5QrCode) return;
   const qrRegionId = "qr-reader";
   html5QrCode = new Html5Qrcode(qrRegionId);
 }
 
-// Start scanning when game starts
 function startScanner() {
   if (!html5QrCode) initScanner();
   if (scannerRunning) return;
@@ -83,7 +99,7 @@ function startScanner() {
 
   html5QrCode
     .start(
-      { facingMode: "environment" }, // back camera if available
+      { facingMode: "environment" },
       config,
       onScanSuccess,
       onScanFailure
@@ -106,52 +122,51 @@ function stopScanner() {
     .stop()
     .then(() => {
       scannerRunning = false;
-      // optionally clear the view:
-      // html5QrCode.clear();
     })
     .catch((err) => {
       console.warn("Error stopping QR scanner", err);
     });
 }
 
-// Called whenever a QR code is successfully decoded
 function onScanSuccess(decodedText, decodedResult) {
   const flagId = decodedText.trim();
   handleFlagScanned(flagId);
 }
 
-// We can ignore scan failures (they happen constantly while searching)
 function onScanFailure(error) {
-  // console.log("Scan failure:", error);
+  // ignored; happens constantly while scanning
 }
 
 // ---------- GAME LOGIC ----------
 
 function handleFlagScanned(flagId) {
-  // Only count known flag IDs (optional – you can remove this check)
-  if (!FLAGS[flagId]) {
-    console.log("Unknown QR code:", flagId);
+  if (!currentTeam || !activeFlags) {
+    console.log("Scan ignored: game not started yet.");
     return;
   }
 
-  // Avoid counting the same flag twice
+  // QR not part of current team's flags
+  if (!activeFlags[flagId]) {
+    console.log("QR code belongs to other team or unknown:", flagId);
+    flashFlagMessage("This flag belongs to the other team");
+    return;
+  }
+
   if (collectedFlagIds.has(flagId)) {
-    // If you want feedback you can alert or show a toast
     console.log("Flag already collected:", flagId);
+    flashFlagMessage("You already collected this flag");
     return;
   }
 
   collectedFlagIds.add(flagId);
   updateFlagsUI();
 
-  // Optional small feedback
-  flashFlagMessage(FLAGS[flagId]);
+  flashFlagMessage(activeFlags[flagId]);
 }
 
-function flashFlagMessage(name) {
-  // Simple temporary message overlay
+function flashFlagMessage(text) {
   const div = document.createElement("div");
-  div.textContent = `Flag collected: ${name}`;
+  div.textContent = text;
   div.style.position = "absolute";
   div.style.bottom = "120px";
   div.style.left = "50%";
@@ -161,7 +176,7 @@ function flashFlagMessage(name) {
   div.style.background = "rgba(0,0,0,0.7)";
   div.style.color = "#fff";
   div.style.fontSize = "14px";
-  div.style.zIndex = "20";
+  div.style.zIndex = "30";
 
   document.querySelector(".app").appendChild(div);
 
@@ -170,8 +185,21 @@ function flashFlagMessage(name) {
 
 // ---------- START / END / RESET ----------
 
-function startGame(minutes) {
-  // Reset state
+function startGame(minutes, team) {
+  currentTeam = team;
+  activeFlags = TEAM_FLAGS[team] || {};
+
+  // team badge
+  const teamBadge = document.getElementById("teamBadge");
+  teamBadge.textContent = "TEAM " + team;
+  teamBadge.classList.remove("team-badge--A", "team-badge--B");
+  if (team === "A") {
+    teamBadge.classList.add("team-badge--A");
+  } else {
+    teamBadge.classList.add("team-badge--B");
+  }
+
+  // reset state
   collectedFlagIds = new Set();
   updateFlagsUI();
 
@@ -207,6 +235,9 @@ function resetGame() {
   collectedFlagIds = new Set();
   updateFlagsUI();
   gameLengthSelect.selectedIndex = 0;
+  teamSelect.selectedIndex = 0;
+  currentTeam = null;
+  activeFlags = {};
 }
 
 // ---------- EVENT LISTENERS ----------
@@ -214,13 +245,19 @@ function resetGame() {
 // Start button
 startButton.addEventListener("click", () => {
   const minutes = parseInt(gameLengthSelect.value, 10);
+  const team = teamSelect.value;
 
   if (isNaN(minutes)) {
     alert("Please pick a game length first.");
     return;
   }
 
-  startGame(minutes);
+  if (!team) {
+    alert("Please pick a team (A or B).");
+    return;
+  }
+
+  startGame(minutes, team);
 });
 
 // Play again buttons
@@ -234,11 +271,18 @@ playAgainWhite.addEventListener("click", () => {
   showScreen("start");
 });
 
-// Optional: camera button could pause/resume scanning or just be decorative
-cameraButton.addEventListener("click", () => {
-  if (scannerRunning) {
-    stopScanner();
-  } else {
-    startScanner();
+// Help overlay
+helpButton.addEventListener("click", () => {
+  helpOverlay.classList.remove("hidden");
+});
+
+helpClose.addEventListener("click", () => {
+  helpOverlay.classList.add("hidden");
+});
+
+// Close help if user taps on dark backdrop
+helpOverlay.addEventListener("click", (e) => {
+  if (e.target === helpOverlay || e.target.classList.contains("help-backdrop")) {
+    helpOverlay.classList.add("hidden");
   }
 });
