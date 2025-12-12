@@ -107,13 +107,6 @@ body {
   align-items: stretch;
 }
 
-.bottom-bar {
-  display: flex;
-  justify-content: center;
-  margin-top: auto;
-   margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom);
-}
 
 /* ---------------- COMMON UI PIECES ---------------- */
 
