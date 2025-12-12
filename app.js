@@ -1,8 +1,5 @@
 // ---------- GAME STATE ----------
 
-// Each QR code "belongs" to a team based on its ID.
-// You do NOT need to change existing QR codes as long as their text
-// matches these IDs (A_FLAG_01, B_FLAG_01, etc.)
 const TEAM_FLAGS = {
   A: {
     A_FLAG_01: "Flag 1 (Team A)",
@@ -20,61 +17,61 @@ const TEAM_FLAGS = {
   },
 };
 
-// ALL flags, regardless of who owns them
-const ALL_FLAGS = {
-  ...TEAM_FLAGS.A,
-  ...TEAM_FLAGS.B,
-};
+const ALL_FLAGS = { ...TEAM_FLAGS.A, ...TEAM_FLAGS.B };
 
 let timerInterval = null;
 let timeLeftSec = 0;
 let collectedFlagIds = new Set();
 
-let lastScannedId = null;
-let lastScanTime = 0;
-const RESCAN_COOLDOWN = 1500; // ms before allowing same QR again
-
-
-// Team / active flags
 let currentTeam = null;
+let enemyTeam = null;
+let enemyTotal = 5;
 
-// QR scanner
 let html5QrCode = null;
 let scannerRunning = false;
 
-// ---------- DOM REFERENCES ----------
+// prevents rapid-fire duplicate events from the scanner
+let scanLockUntil = 0;
+
+// toast state (no overlap)
+let toastTimeout = null;
+
+// ---------- DOM ----------
 
 const screens = {
   start: document.getElementById("screen-start"),
   game: document.getElementById("screen-game"),
   resultsBlue: document.getElementById("screen-results-blue"),
-  resultsWhite: document.getElementById("screen-results-white"),
 };
 
 const timerDisplay = document.getElementById("timerDisplay");
 const flagCountEl = document.getElementById("flagCount");
 const finalFlagsBlue = document.getElementById("finalFlagsBlue");
-const finalFlagsWhite = document.getElementById("finalFlagsWhite");
+
+const finalTime = document.getElementById("finalTime");
+const resultsTitle = document.getElementById("resultsTitle");
+const resultsCaption = document.getElementById("resultsCaption");
 
 const startButton = document.getElementById("startButton");
 const gameLengthSelect = document.getElementById("gameLength");
 const teamSelect = document.getElementById("teamSelect");
 
 const playAgainBlue = document.getElementById("playAgainBlue");
-const playAgainWhite = document.getElementById("playAgainWhite");
 
 const helpButton = document.getElementById("helpButton");
 const helpOverlay = document.getElementById("helpOverlay");
 const helpClose = document.getElementById("helpClose");
 
-// ---------- SCREEN MANAGEMENT ----------
+const toastArea = document.getElementById("toastArea");
+
+// ---------- SCREENS ----------
 
 function showScreen(name) {
   Object.values(screens).forEach((el) => el.classList.remove("screen--active"));
   screens[name].classList.add("screen--active");
 }
 
-// ---------- TIMER & SCORE UI ----------
+// ---------- UI ----------
 
 function formatTime(sec) {
   const m = String(Math.floor(sec / 60)).padStart(2, "0");
@@ -88,40 +85,54 @@ function updateTimer() {
 
 function updateFlagsUI() {
   const count = collectedFlagIds.size;
-  flagCountEl.textContent = count;
+  flagCountEl.textContent = `${count}/${enemyTotal}`;
   finalFlagsBlue.textContent = count;
-  finalFlagsWhite.textContent = count;
 }
 
-// ---------- QR SCANNER SETUP ----------
+// ---------- TOAST (NO OVERLAP, OUTSIDE CAMERA) ----------
+
+function showToast(text, duration = 1800) {
+  // clear previous timeout and replace toast (prevents overlap)
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastArea.innerHTML = "";
+
+  const div = document.createElement("div");
+  div.className = "toast";
+  div.textContent = text;
+  toastArea.appendChild(div);
+
+  toastTimeout = setTimeout(() => {
+    toastArea.innerHTML = "";
+  }, duration);
+}
+
+// ---------- QR ----------
 
 function initScanner() {
   if (html5QrCode) return;
-  const qrRegionId = "qr-reader";
-  html5QrCode = new Html5Qrcode(qrRegionId);
+  html5QrCode = new Html5Qrcode("qr-reader");
 }
 
 function startScanner() {
   if (!html5QrCode) initScanner();
   if (scannerRunning) return;
 
-  const config = { fps: 10, qrbox: 250 };
+  const config = {
+    fps: 10,
+    qrbox: (vw, vh) => {
+      const size = Math.floor(Math.min(vw, vh) * 0.72);
+      return { width: size, height: size }; // square
+    },
+  };
 
   html5QrCode
-    .start(
-      { facingMode: "environment" },
-      config,
-      onScanSuccess,
-      onScanFailure
-    )
+    .start({ facingMode: "environment" }, config, onScanSuccess, () => {})
     .then(() => {
       scannerRunning = true;
     })
     .catch((err) => {
-      console.error("Error starting QR scanner", err);
-      alert(
-        "Could not start camera. Check permissions or try another browser."
-      );
+      console.error(err);
+      alert("Could not start camera. Check permissions and try again.");
     });
 }
 
@@ -133,137 +144,106 @@ function stopScanner() {
     .then(() => {
       scannerRunning = false;
     })
-    .catch((err) => {
-      console.warn("Error stopping QR scanner", err);
-    });
+    .catch(() => {});
 }
 
 function onScanSuccess(decodedText) {
-  const flagId = decodedText.trim();
   const now = Date.now();
 
-  // prevent instant repeat scans of the same QR
-  if (flagId === lastScannedId && now - lastScanTime < RESCAN_COOLDOWN) {
-    return; // ignore repeated frames pointing at same QR code
-  }
+  // lock out spam (scanner often fires multiple times on same QR)
+  if (now < scanLockUntil) return;
+  scanLockUntil = now + 900;
 
-  lastScannedId = flagId;
-  lastScanTime = now;
-
-  handleFlagScanned(flagId);
-}
-
-function onScanFailure(error) {
-  // ignored; happens constantly while scanning
+  handleFlagScanned(decodedText.trim());
 }
 
 // ---------- GAME LOGIC ----------
 
-// Which team owns this flag, based on its prefix?
 function getOwnerTeam(flagId) {
   if (flagId.startsWith("A_")) return "A";
   if (flagId.startsWith("B_")) return "B";
   return null;
 }
 
-// options: { bottom: number, duration: number }
-function flashFlagMessage(text, options = {}) {
-  const bottom = options.bottom ?? 120;      // px from bottom
-  const duration = options.duration ?? 1500; // ms
-
-  const div = document.createElement("div");
-  div.textContent = text;
-  div.style.position = "absolute";
-  div.style.bottom = `${bottom}px`;
-  div.style.left = "50%";
-  div.style.transform = "translateX(-50%)";
-  div.style.padding = "10px 18px";
-  div.style.borderRadius = "999px";
-  div.style.background = "rgba(0,0,0,0.7)";
-  div.style.color = "#fff";
-  div.style.fontSize = "14px";
-  div.style.zIndex = "30";
-
-  document.querySelector(".app").appendChild(div);
-
-  setTimeout(() => div.remove(), duration);
+function hasCapturedAllEnemyFlags() {
+  const enemyFlags = Object.keys(TEAM_FLAGS[enemyTeam]);
+  return enemyFlags.every((id) => collectedFlagIds.has(id));
 }
 
 function handleFlagScanned(flagId) {
-  if (!currentTeam) {
-    console.log("Scan ignored: game not started yet.");
-    return;
-  }
+  if (!currentTeam) return;
 
-  const flagLabel = ALL_FLAGS[flagId];
-
-  // QR code not known at all
-  if (!flagLabel) {
-    console.log("Unknown QR code:", flagId);
-    flashFlagMessage("Unknown flag");
+  // unknown QR
+  if (!ALL_FLAGS[flagId]) {
+    showToast("Unknown flag", 1400);
     return;
   }
 
   const ownerTeam = getOwnerTeam(flagId);
 
-  // ❌ You are scanning your OWN team's flag: show warning, no points
+  // must steal enemy flags ONLY
   if (ownerTeam === currentTeam) {
-    flashFlagMessage(
-      "This is your own team's flag – you have to steal the other team's flags!",
-      { bottom: 140, duration: 2200 }
-    );
+    showToast("This is your team’s flag — steal the enemy flags!", 2200);
     return;
   }
 
-  const alreadyCollected = collectedFlagIds.has(flagId);
+  // already scanned
+  if (collectedFlagIds.has(flagId)) {
+    showToast("You scanned this flag already", 1400);
+    return;
+  }
 
-  // First time: add to set + increase score
-  if (!alreadyCollected) {
-    collectedFlagIds.add(flagId);
-    updateFlagsUI();
+  // steal success
+  collectedFlagIds.add(flagId);
+  updateFlagsUI();
 
-    // main message: stolen flag
-    let msg;
-    if (ownerTeam) {
-      msg = `You stole Team ${ownerTeam}'s flag!`;
-    } else {
-      msg = "Flag captured!";
-    }
+  showToast(`You stole Team ${ownerTeam}'s flag!`, 2000);
 
-    // show main "stolen" message higher + a bit longer
-    flashFlagMessage(msg, { bottom: 140, duration: 2000 });
-  } else {
-    // Re-scan: ONLY show "already scanned", lower + shorter
-    flashFlagMessage("You scanned this flag already", {
-      bottom: 80,
-      duration: 1200,
-    });
+  // win early
+  if (hasCapturedAllEnemyFlags()) {
+    // show win toast briefly then finish
+    showToast("🏆 You captured all enemy flags!", 2200);
+    setTimeout(() => finishGame("win"), 900);
   }
 }
 
-// ---------- START / END / RESET ----------
+// ---------- START / END ----------
+
+function finishGame(mode) {
+  stopScanner();
+  if (timerInterval) clearInterval(timerInterval);
+
+  finalTime.textContent = formatTime(timeLeftSec);
+
+  if (mode === "win") {
+    resultsTitle.textContent = "YOU CAPTURED ALL FLAGS";
+    resultsCaption.textContent = "enemy flags stolen";
+  } else {
+    resultsTitle.textContent = "TIME’S UP";
+    resultsCaption.textContent = "enemy flags stolen";
+  }
+
+  showScreen("resultsBlue");
+  updateFlagsUI();
+}
 
 function startGame(minutes, team) {
   currentTeam = team;
+  enemyTeam = team === "A" ? "B" : "A";
+  enemyTotal = Object.keys(TEAM_FLAGS[enemyTeam]).length;
 
-  // team badge
   const teamBadge = document.getElementById("teamBadge");
   teamBadge.textContent = "TEAM " + team;
   teamBadge.classList.remove("team-badge--A", "team-badge--B");
-  if (team === "A") {
-    teamBadge.classList.add("team-badge--A");
-  } else {
-    teamBadge.classList.add("team-badge--B");
-  }
+  teamBadge.classList.add(team === "A" ? "team-badge--A" : "team-badge--B");
 
-  // reset state
   collectedFlagIds = new Set();
   updateFlagsUI();
 
   timeLeftSec = minutes * 60;
   updateTimer();
 
-  if (timerInterval) clearInterval(timerInterval);
+  toastArea.innerHTML = ""; // clear messages
 
   showScreen("game");
   startScanner();
@@ -273,32 +253,30 @@ function startGame(minutes, team) {
     updateTimer();
 
     if (timeLeftSec <= 0) {
-      clearInterval(timerInterval);
-      endGame();
+      finishGame("time");
     }
   }, 1000);
-}
-
-function endGame() {
-  stopScanner();
-  showScreen("resultsBlue");
-  updateFlagsUI();
 }
 
 function resetGame() {
   if (timerInterval) clearInterval(timerInterval);
   stopScanner();
+
   timeLeftSec = 0;
   collectedFlagIds = new Set();
   updateFlagsUI();
+
   gameLengthSelect.selectedIndex = 0;
   teamSelect.selectedIndex = 0;
+
   currentTeam = null;
+  enemyTeam = null;
+
+  toastArea.innerHTML = "";
 }
 
-// ---------- EVENT LISTENERS ----------
+// ---------- EVENTS ----------
 
-// Start button
 startButton.addEventListener("click", () => {
   const minutes = parseInt(gameLengthSelect.value, 10);
   const team = teamSelect.value;
@@ -307,7 +285,6 @@ startButton.addEventListener("click", () => {
     alert("Please pick a game length first.");
     return;
   }
-
   if (!team) {
     alert("Please pick a team (A or B).");
     return;
@@ -316,27 +293,14 @@ startButton.addEventListener("click", () => {
   startGame(minutes, team);
 });
 
-// Play again buttons
 playAgainBlue.addEventListener("click", () => {
   resetGame();
   showScreen("start");
 });
 
-playAgainWhite.addEventListener("click", () => {
-  resetGame();
-  showScreen("start");
-});
-
 // Help overlay
-helpButton.addEventListener("click", () => {
-  helpOverlay.classList.remove("hidden");
-});
-
-helpClose.addEventListener("click", () => {
-  helpOverlay.classList.add("hidden");
-});
-
-// Close help if user taps on dark backdrop
+helpButton.addEventListener("click", () => helpOverlay.classList.remove("hidden"));
+helpClose.addEventListener("click", () => helpOverlay.classList.add("hidden"));
 helpOverlay.addEventListener("click", (e) => {
   if (e.target === helpOverlay || e.target.classList.contains("help-backdrop")) {
     helpOverlay.classList.add("hidden");
