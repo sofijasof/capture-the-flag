@@ -59,6 +59,8 @@ body {
 /* ---------------- SCREENS ---------------- */
 
 .screen {
+  height: 100%;
+  overflow-y: auto;
   position: absolute;
   inset: 0;
   display: none;
@@ -109,6 +111,8 @@ body {
   display: flex;
   justify-content: center;
   margin-top: auto;
+   margin-top: auto;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ---------------- COMMON UI PIECES ---------------- */
