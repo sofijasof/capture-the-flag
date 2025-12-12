@@ -10,46 +10,43 @@
 <body>
   <div class="app">
 
-    <!-- START SCREEN -->
-    <section id="screen-start" class="screen screen--active screen--blue-bg">
-      <header class="top-bar">
-        <button id="helpButton" class="icon-button" aria-label="How the game works">?</button>
-      </header>
+<section id="screen-start" class="screen screen--active screen--blue-bg">
+  <header class="top-bar">
+    <button id="helpButton" class="icon-button" aria-label="How the game works">?</button>
+  </header>
 
-      <div class="screen-content">
-        <div class="logo">LOGO</div>
+  <div class="screen-content">
+    <div class="logo">LOGO</div>
 
-        <!-- Game length select -->
-        <label class="field">
-          <span class="field-label">Game length</span>
-          <div class="select-wrapper">
-            <select id="gameLength">
-              <option value="" selected disabled>Pick game length</option>
-              <option value="3">3 minutes</option>
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="15">15 minutes</option>
-            </select>
-          </div>
-        </label>
-
-        <!-- Team select -->
-        <label class="field">
-          <span class="field-label">Team</span>
-          <div class="select-wrapper">
-            <select id="teamSelect">
-              <option value="" selected disabled>Pick your team</option>
-              <option value="A">Team A</option>
-              <option value="B">Team B</option>
-            </select>
-          </div>
-        </label>
+    <label class="field">
+      <span class="field-label">Game length</span>
+      <div class="select-wrapper">
+        <select id="gameLength">
+          <option value="" selected disabled>Pick game length</option>
+          <option value="3">3 minutes</option>
+          <option value="5">5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+        </select>
       </div>
+    </label>
 
-      <div class="bottom-bar">
-        <button id="startButton" class="primary-button">START</button>
+    <label class="field">
+      <span class="field-label">Team</span>
+      <div class="select-wrapper">
+        <select id="teamSelect">
+          <option value="" selected disabled>Pick your team</option>
+          <option value="A">Team A</option>
+          <option value="B">Team B</option>
+        </select>
       </div>
-    </section>
+    </label>
+
+    <!-- Start button now placed here -->
+    <button id="startButton" class="primary-button">START</button>
+  </div>
+</section>
+
 
     <!-- GAME SCREEN -->
     <section id="screen-game" class="screen screen--blue-bg">
