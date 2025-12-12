@@ -30,6 +30,11 @@ let timerInterval = null;
 let timeLeftSec = 0;
 let collectedFlagIds = new Set();
 
+let lastScannedId = null;
+let lastScanTime = 0;
+const RESCAN_COOLDOWN = 1500; // ms before allowing same QR again
+
+
 // Team / active flags
 let currentTeam = null;
 
@@ -133,8 +138,18 @@ function stopScanner() {
     });
 }
 
-function onScanSuccess(decodedText, decodedResult) {
+function onScanSuccess(decodedText) {
   const flagId = decodedText.trim();
+  const now = Date.now();
+
+  // prevent instant repeat scans of the same QR
+  if (flagId === lastScannedId && now - lastScanTime < RESCAN_COOLDOWN) {
+    return; // ignore repeated frames pointing at same QR code
+  }
+
+  lastScannedId = flagId;
+  lastScanTime = now;
+
   handleFlagScanned(flagId);
 }
 
