@@ -4,83 +4,91 @@
   <meta charset="UTF-8" />
   <title>Capture the Flag</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <div class="app">
 
-<section id="screen-start" class="screen screen--active screen--blue-bg">
-  <header class="top-bar">
-    <button id="helpButton" class="icon-button" aria-label="How the game works">?</button>
-  </header>
+    <!-- START SCREEN -->
+    <section id="screen-start" class="screen screen--active screen--blue-bg">
+      <header class="top-bar">
+        <button id="helpButton" class="help-button">How to play</button>
+      </header>
 
-  <div class="screen-content">
-    <div class="logo">LOGO</div>
+      <div class="screen-content screen-content--start">
+        <div class="logo">
+          <div class="logo-line">CAPTURE</div>
+          <div class="logo-line">THE FLAG</div>
+        </div>
 
-    <label class="field">
-      <span class="field-label">Game length</span>
-      <div class="select-wrapper">
-        <select id="gameLength">
-          <option value="" selected disabled>Pick game length</option>
-          <option value="3">3 minutes</option>
-          <option value="5">5 minutes</option>
-          <option value="10">10 minutes</option>
-          <option value="15">15 minutes</option>
-        </select>
+        <div class="panel">
+          <label class="field">
+            <span class="field-label">Game length</span>
+            <div class="select-wrapper">
+              <select id="gameLength">
+                <option value="" selected disabled>Pick game length</option>
+                <option value="3">3 minutes</option>
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="15">15 minutes</option>
+              </select>
+            </div>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Team</span>
+            <div class="select-wrapper">
+              <select id="teamSelect">
+                <option value="" selected disabled>Pick your team</option>
+                <option value="A">Team A</option>
+                <option value="B">Team B</option>
+              </select>
+            </div>
+          </label>
+
+          <button id="startButton" class="primary-button primary-button--wide">START</button>
+        </div>
       </div>
-    </label>
-
-    <label class="field">
-      <span class="field-label">Team</span>
-      <div class="select-wrapper">
-        <select id="teamSelect">
-          <option value="" selected disabled>Pick your team</option>
-          <option value="A">Team A</option>
-          <option value="B">Team B</option>
-        </select>
-      </div>
-    </label>
-
-    <!-- Start button now placed here -->
-    <button id="startButton" class="primary-button">START</button>
-  </div>
-</section>
-
+    </section>
 
     <!-- GAME SCREEN -->
     <section id="screen-game" class="screen screen--blue-bg">
       <header class="top-bar top-bar--game">
         <div class="team-badge" id="teamBadge">TEAM</div>
-
         <div class="pill" id="timerDisplay">05:00</div>
 
         <div class="pill pill--icon">
-          <span id="flagCount">0</span>
+          <span id="flagCount">0/5</span>
           <span>🚩</span>
         </div>
       </header>
 
+      <!-- ✅ Messages live here (NOT inside camera view) -->
+      <div id="toastArea" class="toast-area" aria-live="polite"></div>
+
       <div class="camera-area">
-        <div id="qr-reader" class="camera-placeholder">
-          Allow camera access to scan flags
-        </div>
+        <div id="qr-reader" class="camera-view"></div>
       </div>
     </section>
 
-    <!-- FINAL SCREEN (BLUE VERSION) -->
+    <!-- FINAL SCREEN -->
     <section id="screen-results-blue" class="screen screen--blue-bg">
       <div class="screen-content screen-content--centered">
-        <div class="logo">LOGO</div>
-        <div class="timer-final">00:00</div>
-        <h1 class="title-final">TIME’S UP</h1>
+        <div class="logo">
+          <div class="logo-line">CAPTURE</div>
+          <div class="logo-line">THE FLAG</div>
+        </div>
+
+        <div class="timer-final" id="finalTime">00:00</div>
+        <h1 class="title-final" id="resultsTitle">TIME’S UP</h1>
 
         <div class="card">
           <div class="card-main">
             <span id="finalFlagsBlue" class="card-number">0</span>
             <span class="card-icon">🚩</span>
           </div>
-          <div class="card-caption">collected flags</div>
+          <div class="card-caption" id="resultsCaption">enemy flags stolen</div>
         </div>
 
         <button id="playAgainBlue" class="primary-button primary-button--wide">
@@ -89,55 +97,28 @@
       </div>
     </section>
 
-    <!-- OPTIONAL WHITE FINISH SCREEN -->
-    <section id="screen-results-white" class="screen screen--light-bg">
-      <div class="screen-content screen-content--centered">
-        <div class="logo logo--dark">LOGO</div>
-
-        <div class="timer-final timer-final--dark">00:00</div>
-        <h1 class="title-final title-final--dark">TIME’S UP</h1>
-
-        <div class="card card--dark">
-          <div class="card-main">
-            <span id="finalFlagsWhite" class="card-number">0</span>
-            <span class="card-icon">🚩</span>
-          </div>
-          <div class="card-caption">collected flags</div>
-        </div>
-
-        <div class="meta">
-          <div id="summaryGameLength">game length: 5 minutes</div>
-          <div id="summaryPlayers">players: 3</div>
-        </div>
-
-        <button id="playAgainWhite" class="primary-button primary-button--wide">
-          play again
-        </button>
-      </div>
-    </section>
-
     <!-- HELP OVERLAY -->
     <div id="helpOverlay" class="help-overlay hidden">
       <div class="help-backdrop"></div>
+
       <div class="help-card">
         <button id="helpClose" class="help-close" aria-label="Close help">×</button>
 
-        <h2>🕹️ How the Game Works</h2>
+        <h2>How to play</h2>
+
         <ol class="help-list">
-          <li>You have to allow camera access to play the game.</li>
-          <li>Walk around campus and scan hidden QR codes. A QR code can only be scanned once by the same player.</li>
-          <li>Each QR code counts as a flag.</li>
-          <li>When the timer runs out, the team with the most flags wins.</li>
+          <li><strong>Allow camera access</strong> to play the game.</li>
+          <li>Choose a team and <strong>steal the other team’s flags</strong> by scanning their QR codes.</li>
+          <li>You <strong>cannot</strong> scan your own team’s flags.</li>
+          <li>Each QR code can only be scanned once by the same player.</li>
+          <li>If you steal <strong>all 5 enemy flags</strong>, you win instantly!</li>
         </ol>
       </div>
     </div>
 
   </div>
 
-  <!-- QR code library -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
-  <!-- App logic -->
   <script src="app.js"></script>
 </body>
 </html>
